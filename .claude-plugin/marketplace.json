@@ -1,0 +1,15 @@
+{
+  "name": "gadfly",
+  "owner": {
+    "name": "Alex Makarski",
+    "url": "https://github.com/alexmakarski"
+  },
+  "plugins": [
+    {
+      "name": "gadfly",
+      "source": "../",
+      "description": "Adversarial review stack: prior-art (scout), critic-gauntlet (verdict), waterfall-lint (scrub)",
+      "version": "1.0.0"
+    }
+  ]
+}

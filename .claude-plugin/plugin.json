@@ -1,0 +1,10 @@
+{
+  "name": "gadfly",
+  "description": "GADFLY: adversarial review stack. Three skills for the three moments work goes wrong: prior-art (scout how the field already solved it, fetched and quoted), critic-gauntlet (parallel multi-model verdict on a proposal, convergence binds), waterfall-lint (sequential receipt-checked scrub of the finished artifact until critics run dry). Gather, Attack, Decide, Fix, Lint, Yield.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Alex Makarski"
+  },
+  "repository": "https://github.com/alexmakarski/gadfly",
+  "license": "MIT"
+}
