@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.6.0
+version: 2.7.0
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -24,7 +24,7 @@ The full roster is five critics:
 
 Only critic 1 is required. The other three are bolt-ons you enable when you have the credentials. Running with just the Claude subagent is valid but weak: you lose the cross-model diversity that is the whole point. Two or three models arguing is materially better; four is the recommended bar for a decision you cannot cheaply reverse.
 
-If you have all five configured, run all five by default. Drop a critic on a given round only when speed matters more than coverage. Grok, Gemini, and DeepSeek carry higher noise floors than Claude and Codex, so if you are trimming, drop from that tier first. A critic newly added to the roster is UNCALIBRATED (DeepSeek as of 2026-07): run it and read it, but it does not count toward binding thresholds until the promotion criteria in the synthesis section hold.
+If you have all five configured, run all five by default. Drop a critic on a given round only when speed matters more than coverage. Grok, Gemini, and DeepSeek carry higher noise floors than Claude and Codex, so if you are trimming, drop from that tier first. A critic newly added to the roster is UNCALIBRATED: run it and read it, but it does not count toward binding thresholds until the promotion criteria in the synthesis section hold. (DeepSeek ran uncalibrated 2026-07 to 2026-08 and was promoted to a full binding vote on 2026-08-19 after meeting all three criteria.)
 
 ## Modes
 
@@ -169,7 +169,7 @@ Typical timing: Claude subagent 2-3 min, Codex CLI 5-10 min, Grok and Gemini und
 - Codex CLI: specification-bug anchor, low noise.
 - Grok: privacy / policy / jurisdictional angles. Higher noise.
 - Gemini: catches blind spots shaped by Google's training distribution. Highest calibrated noise.
-- DeepSeek: a training distribution and RLHF lineage unlike the other four; strong quantitative bent. UNCALIBRATED as of 2026-07: noise tier by default until proven.
+- DeepSeek: a training distribution and RLHF lineage unlike the other four; strong quantitative bent (arithmetic reconciliation, misattribution). CALIBRATED 2026-08-19: full binding vote. Weight in the noise tier, and treat its lone architecture kill-dissents like Grok's kill recommendations (verify first).
 
 Whatever the outcome, the synthesis roster line must name every critic that was attempted and its status (returned / dropped-after-2-fails / user-skipped), so the degraded-roster fact survives into the record.
 
@@ -194,7 +194,7 @@ The synthesis identifies:
 - **All-critic convergence (5-of-5, 4-of-4, or 3-of-3, per roster size).** Strongest possible signal. Binding for the next iteration AND for the final decision (Step 5.5): you may not ship an architecture the critics converged against without explicit user override.
 - **Majority convergence.** Strong signal. Worth incorporating.
 - **Split convergence.** Evaluate by which critics converged. The two lowest-noise models agreeing (Claude + Codex) is high signal. The two noisier models agreeing (Grok + Gemini) should be treated as one combined noisy vote: verify the finding before incorporating. A mixed pair is case-by-case.
-- **Uncalibrated critics.** A critic new to the roster (DeepSeek as of 2026-07) does NOT count toward binding thresholds until ALL THREE promotion criteria hold: (1) it has run in at least two different modes; (2) at least one round where it disagreed with part of the calibrated panel and the disagreement did not resolve against it (agreeing with an overwhelming consensus is not calibration evidence; a derivative critic produces the same result); (3) no invented-findings pattern on material that was fundamentally sound. Promotion is a fact about observed behavior, not a round count. Until then: bind on the calibrated critics' counts; treat the uncalibrated critic's agreement as corroboration and its lone novel findings as leads to verify. Log each round's calibration observation.
+- **Uncalibrated critics.** A critic new to the roster (none currently; DeepSeek was promoted 2026-08-19 after meeting all three criteria: three modes, receipt-confirmed unique catches that the calibrated panel missed, zero invented quotes on record) does NOT count toward binding thresholds until ALL THREE promotion criteria hold: (1) it has run in at least two different modes; (2) at least one round where it disagreed with part of the calibrated panel and the disagreement did not resolve against it (agreeing with an overwhelming consensus is not calibration evidence; a derivative critic produces the same result); (3) no invented-findings pattern on material that was fundamentally sound. Promotion is a fact about observed behavior, not a round count. Until then: bind on the calibrated critics' counts; treat the uncalibrated critic's agreement as corroboration and its lone novel findings as leads to verify. Log each round's calibration observation.
 - **Single-critic novel findings.** Sometimes the most valuable. Codex tends to catch specification bugs others miss. Claude tends to catch operational nuance. Grok tends to catch privacy/policy/jurisdictional angles. Gemini catches things shaped by a different training distribution.
 - **Recommendation split.** Models differ systematically in how readily they recommend killing vs. amending. Track each critic's calibration over several decisions. Do not over-weight any single critic's kill recommendation when the majority amends.
 
