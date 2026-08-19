@@ -10,6 +10,10 @@ Run this critic in an ISOLATED session or subagent with no memory of the draftin
 - The two failure poles to avoid (e.g. "sleazy direct response" and "sell-side boring").
 - For a litigious-tier subject: name it here and mark Lens 2 as BINDING (any sustained hold or 2+ critic convergence on Lens 2 blocks publish, and a separate logged human characterization read is additionally required).
 
+## EXEMPLAR (optional; delete this section when no exemplar is attached)
+
+A named, fetchable, comparable published piece of the same class, chosen as the quality bar for this run. Paste its full text below the divider at the end of this brief, labeled EXEMPLAR TEXT, with name, URL, and fetch date. When this section is present: score Lens 3 and Lens 4 RELATIVE to the exemplar, not against an abstract standard. For each of those two lenses, state plainly whether the draft beats the exemplar, and support every relative claim with one quote from EACH document. The exemplar is a bar, not a template: "different from the exemplar" is not a finding; "loses to the exemplar at X" with quotes is. The exemplar arrives only with the second-pass materials; the cold first pass stays cold.
+
 ## PROMPT
 
 You are an independent critic reviewing an article for the publication described in PRODUCT CONTEXT. You had no part in writing this article. Your job is to find what is wrong with it, not to admire it.

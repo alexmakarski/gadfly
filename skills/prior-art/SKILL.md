@@ -1,6 +1,6 @@
 ---
 name: prior-art
-version: 1.1.0
+version: 1.2.0
 description: Find out how a problem has ALREADY been solved, before anyone writes a proposal about it. Dispatches parallel scouts across separate bodies of knowledge (academic literature, production practice in regulated industries, vendor architecture, practitioner threads on X / HN / Reddit, implementations on GitHub) and returns what exists, with every source fetched and quoted rather than recalled. Scouts REPORT; they never judge, rank, or recommend. Run this BEFORE critic-gauntlet: the gauntlet decides whether a proposal is wrong, this decides whether the proposal should have been written that way at all. Use when facing an architectural decision, a hard technical problem that feels novel, a vendor or platform choice, or any question where "surely someone has solved this" is worth asking.
 trigger_phrases:
   - prior art
@@ -106,6 +106,11 @@ fiction; drop the finding.
 Surface the raw files first, unsummarized. Then map onto the project yourself.
 The output feeds a proposal, and the proposal goes to critic-gauntlet.
 
+Keep the harvested best-in-class specimens with the run's output: they are the
+candidate exemplars for waterfall-lint's bar pass and for the editorial
+exemplar block in critic-gauntlet, both of which need a named, fetchable,
+comparable artifact to compare against.
+
 ## Output schema (give this to every scout, verbatim)
 
 ```
@@ -132,6 +137,13 @@ URL and why. Anything here is NOT a finding.
 ## What I looked for and did NOT find
 Be specific. Negative results are the most valuable thing here and the
 easiest to skip.
+
+## Best-in-class specimens (only if you saw any)
+Concrete artifacts of the same class the orchestrator is working toward that
+could serve as a quality bar later: NAMED (a specific live thing, not a
+category), FETCHABLE (you opened it), COMPARABLE (same artifact class). One
+line each: name, URL, and why it sets the bar. Do not rank them; do not
+force entries if nothing qualified.
 ```
 
 Ask each scout for a short summary (under 200 words) as its return message, and

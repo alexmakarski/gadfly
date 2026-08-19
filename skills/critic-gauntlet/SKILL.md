@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.8.0
+version: 2.9.0
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -41,6 +41,7 @@ Posture is identical across modes: no sympathetic openers, lead with the stronge
 Per-mode policy that differs from the architecture default:
 
 - **science data-sovereignty.** The external API critics (Grok, Gemini, DeepSeek) are third-party vendors, and DeepSeek's default endpoint is additionally PRC-hosted (strictest tier; prefer a US-hosted endpoint or drop the critic when in doubt). In science mode they may read ONLY the anonymized paper and its stated public sources, NEVER the raw dataset or any file carrying subject identity. A properly anonymized paper is safe to send; the underlying data and any identity key are not. This is a policy about egress of identified data to outside APIs, not a ban on running multiple critics: an anonymized artifact runs the full roster. The brief template restates this rule in its header.
+- **editorial exemplar block (optional, added 2.9.0).** The editorial brief template carries an optional EXEMPLAR section: one named, fetchable, comparable published piece of the same class, pasted into the brief, that anchors the reader-engagement and slop lenses to a real bar instead of an abstract 0-10. Use it when a defensible exemplar exists (prior-art's "best-in-class specimens" harvest is the natural source); delete the section otherwise. The exemplar rides call 2 of the two-call protocol, so the cold read stays cold. Technique adapted from Matt Shumer's Claude of Duty via robonuggets/gauntlet-loop (CC BY 4.0).
 - **editorial calibration.** Model families differ in how readily they flag editorial risk; some run lenient on prose and strict on architecture, or the reverse. Do not assume a critic's architecture-mode temperament carries into editorial. Weight by which critics actually converge on quoted evidence. The API helper scripts run a two-call protocol in editorial mode: call 1 sees the article alone and returns the cold-read log, call 2 gets the brief and materials plus those notes, so the cold first pass is real rather than reconstructed.
 
 ## When to invoke

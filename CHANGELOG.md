@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.0 (2026-08-19)
+
+The exemplar-bar release, adapted from Matt Shumer's Claude of Duty via
+robonuggets/gauntlet-loop (CC BY 4.0):
+
+- waterfall-lint 1.3.0: optional BAR PASS after the loop goes dry. One blind
+  A/B against a named, fetched exemplar of the same class, run twice with two
+  model families and document order swapped; only losses both critics name
+  survive, entering triage as GAP (operator-judged, never able to override a
+  receipt). Proof-of-life measured: on a peer pair, single verdicts followed
+  document position and the overlap rule correctly returned zero; on a
+  known-gap pair, both critics found the better document from opposite
+  positions and recovered the rework's actual improvements.
+- prior-art 1.2.0: scouts harvest "best-in-class specimens" (named, fetchable,
+  comparable) as candidate quality bars for the two consumers above.
+- critic-gauntlet 2.9.0: optional EXEMPLAR block in the editorial brief
+  anchors the reader-engagement and slop lenses to a real fetched piece;
+  rides call 2 so the cold read stays cold.
+
 ## 1.1.0 (2026-08-19)
 
 - Universal across runtimes: the SKILL.mds now work from Claude Code AND any

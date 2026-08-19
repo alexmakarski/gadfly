@@ -1,6 +1,6 @@
 ---
 name: waterfall-lint
-version: 1.2.0
+version: 1.3.0
 description: Sequential multi-critic QA loop that scrubs a finished artifact until critics run dry. Critics run one at a time, each finding is fact-checked against ground truth before any fix, confirmed defects are fixed at class level (a validator, lint, or test, not just the instance), accepted warts go in a ledger every later critic sees, and the loop stops after two consecutive passes find nothing new. Companion to critic-gauntlet, which delivers a one-shot parallel verdict; waterfall-lint iteratively removes defects with fixes between passes. Rubrics ship for client-facing reports, working papers, and site launches.
 ---
 
@@ -97,6 +97,7 @@ Write `<work-folder>/factcheck-v<N>.md` with one verdict per finding:
 - **CONFIRMED**: the receipts support it. Goes to triage.
 - **REFUTED**: the receipts contradict it. Log the receipt that refutes it (this is also the critic-calibration record). No fix. Append a one-line entry to `refuted.md` so the next brief carries it: refutations recur across critics because the reasoning that produces them is plausible. On one run, the same "the page's arithmetic is wrong" finding was flagged by two critics and refuted twice by the same receipt, which showed the page accurately quoting a source who did the arithmetic wrong.
 - **WART-CANDIDATE**: real but arguably acceptable (cost/benefit, by-design, out of scope). Queued for the operator. The agent NEVER accepts a wart on its own; wart acceptance is the operator's call, in session or in a morning batch. Accepted warts enter `warts.md` with date and one-line reason.
+- **GAP** (bar passes only, see "The bar pass" below): a judged loss against the exemplar, confirmed by both bar critics. Never receipt-confirmable, never overrides a receipt, queued for the operator like a wart candidate.
 
 ### Step 6: Fix at class level
 
@@ -131,6 +132,63 @@ So two dry passes from two critics with the SAME lens is a weaker signal than th
 - A rising defect count on a later pass is evidence about COVERAGE, not about the artifact getting worse. Record it that way, or the log will read as though the work went backwards.
 
 The honest version of the stopping rule: stop when two consecutive passes are dry AND the remaining unrun critics offer no lens the run has not already seen.
+
+## The bar pass (optional final gate, added 1.3.0 of this edition)
+
+Dryness proves the artifact has no findable defects. It does not prove the
+artifact is any good. The bar pass answers the second question: after the loop
+goes dry (or the operator closes it), one blind comparison against a real
+published exemplar of the same class. Technique adapted from Matt Shumer's
+Claude of Duty via robonuggets/gauntlet-loop (CC BY 4.0).
+
+Run it only when a defensible exemplar exists: NAMED (a specific live
+artifact, not a category), FETCHABLE (you can snapshot its text), COMPARABLE
+(same artifact class and audience). prior-art's "best-in-class specimens"
+harvest is the natural source. No qualifying exemplar, no bar pass; never
+force one.
+
+Mechanics:
+
+1. **Snapshot the exemplar** to `<work-folder>/exemplar.md`: name, URL, fetch
+   date, then the full reader-visible text. Verify the extraction the same way
+   as the artifact's (the SVG-skipping extractor bit once; do not let the
+   exemplar lose its charts either). Every comparison runs against this frozen
+   snapshot, never a memory of the page.
+2. **Build the A/B bundle.** The bar pass continues the pass numbering: for
+   pass N, write `proposal-v<N>.md` containing both documents labeled
+   DOCUMENT A and DOCUMENT B with a divider, and `brief-v<N>.md` from
+   `rubrics/bar-pass.brief-template.md`. Do not say which document is under
+   review.
+3. **Run it twice, two model families, orders swapped.** Pass N: one critic,
+   artifact as A. Pass N+1: a different-family critic, artifact as B (a fresh
+   `proposal-v<N+1>.md` with the order flipped). Default pair: Codex and
+   DeepSeek. Both run `--mode qa` (so no prior-round contamination). Swapping
+   the order between the two runs cancels position bias; requiring two
+   families cancels one model's taste.
+4. **Keep only losses BOTH critics name** (matched by substance, not
+   wording). A loss one critic sees and the other does not is a lead at most;
+   log it, do not act on it.
+
+Findings from the bar pass are GAPs, not defects. A GAP enters
+`factcheck-v<N>.md` with the verdict **GAP**: real only as a judgment, never
+receipt-confirmable, and it can NEVER override a receipt (a claimed loss that
+contradicts the receipts is REFUTED as usual). GAPs queue for the operator
+exactly like WART-CANDIDATEs: the agent never accepts or fixes one on its own,
+because closing a gap usually means another generation cycle, and whether the
+gap is worth that cycle is a judgment about the artifact's job, not its text.
+The bar pass never reopens the defect loop by itself.
+
+Measured on the first proof-of-life (2026-08-19, two runs): on a PEER pair
+(two specimens of comparable quality) the two single verdicts each followed
+position A and contradicted each other, so zero GAPs survived, which is the
+correct null result; on a KNOWN-GAP pair (a draft vs its documented rework)
+both critics picked the better document from opposite positions and the
+surviving overlap recovered exactly the improvements the rework had made.
+Consequence: the two-run order swap and the overlap rule are load-bearing.
+NEVER act on a single-critic bar verdict.
+
+Log the bar passes in `loop-log.md` like any other pass, with the exemplar
+name and both verdicts. Two API critiques of a doubled document: still cents.
 
 ## Raw outputs and the operator
 
@@ -241,6 +299,7 @@ Data note: these three are third-party APIs. Text already written to be shown to
 - `SKILL.md` (this file)
 - `grok-critic.sh`, `gemini-critic.sh`, `deepseek-critic.sh`, `claude-critic.sh` (byte-identical to critic-gauntlet's; `--mode qa` disables prior-round context, see "API critics" above)
 - `modes/qa.system.txt`
+- `rubrics/bar-pass.brief-template.md` (the optional exemplar bar pass)
 - `rubrics/client-report.brief-template.md`, `rubrics/paper.brief-template.md`, `rubrics/site-launch.brief-template.md`, `rubrics/AUTHORING.md`
 - `examples/worked-example.md`
 - `.env.example`
