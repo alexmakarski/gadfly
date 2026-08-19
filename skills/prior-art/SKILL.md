@@ -1,6 +1,6 @@
 ---
 name: prior-art
-version: 1.0.1
+version: 1.1.0
 description: Find out how a problem has ALREADY been solved, before anyone writes a proposal about it. Dispatches parallel scouts across separate bodies of knowledge (academic literature, production practice in regulated industries, vendor architecture, practitioner threads on X / HN / Reddit, implementations on GitHub) and returns what exists, with every source fetched and quoted rather than recalled. Scouts REPORT; they never judge, rank, or recommend. Run this BEFORE critic-gauntlet: the gauntlet decides whether a proposal is wrong, this decides whether the proposal should have been written that way at all. Use when facing an architectural decision, a hard technical problem that feels novel, a vendor or platform choice, or any question where "surely someone has solved this" is worth asking.
 trigger_phrases:
   - prior art
@@ -83,6 +83,11 @@ the others cannot see. The angles that earned their place on the first run:
 
 One agent per angle, all in one message. Give each the neutral problem
 statement, its angle, the hard rules, and the output schema below.
+
+On hosts without an Agent tool (Codex or any other orchestrator), run each
+scout as its own headless session instead (`claude -p` with the scout prompt,
+or `codex exec --sandbox read-only`), one per angle, each writing its own
+report file. The rules and schema are identical either way.
 
 ### 4. Verify before you show anyone anything
 

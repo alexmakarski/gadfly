@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.0 (2026-08-19)
+
+- Universal across runtimes: the SKILL.mds now work from Claude Code AND any
+  orchestrator without the Agent tool (Codex CLI etc.). New `claude-critic.sh`
+  joins the unified script family: headless `claude -p` on your subscription,
+  `ANTHROPIC_API_KEY` scrubbed from the subprocess, the model receives no
+  tools (content piped in, the script writes the one output file).
+- critic-gauntlet 2.8.0: DeepSeek promoted from uncalibrated to full binding
+  panel member (2.7.0), universality note (2.8.0).
+- waterfall-lint 1.2.0, prior-art 1.1.0: no-Agent-tool dispatch fallbacks.
+
 ## 1.0.0 (2026-08-19)
 
 First public release of GADFLY, bundling three previously separate skills:

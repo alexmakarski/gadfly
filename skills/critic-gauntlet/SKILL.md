@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.7.0
+version: 2.8.0
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -117,6 +117,8 @@ All critics answer the same brief and follow ITS output format (which differs by
 
 **Critic 1: Claude critic subagent.** Use the Agent tool with `subagent_type: "gauntlet-critic"`. Tell the agent to read the brief, read the required files, follow the brief's output format, write its critique to `<work-folder>/critique-v<N>-claude.md`, and confirm with a one-line output. Run in background.
 
+**No Agent tool? This SKILL.md is universal (added 2.8.0).** When the orchestrator is NOT Claude Code (Codex, or any host without the Agent tool), run the Claude critic as a script instead: `claude-critic.sh <work-folder> <N> --mode <mode>` (ships next to the other critic scripts). It runs `claude -p` headless on your Claude subscription, scrubs `ANTHROPIC_API_KEY` from the subprocess so the billing guardrail is enforced in code, and gives the model NO tools at all: brief and proposal are piped in, and the script itself writes the single output file, so its blast radius is smaller than the subagent's. Liveness-gate it as a Bash critic (exit 0 + file check). The Codex critic invocation is unchanged from any host: a fresh `codex exec --sandbox read-only` subprocess is an independent context even when Codex is the orchestrator (do not double-count the orchestrator as a critic). The synthesizer on a no-Agent-tool host: `claude -p --model haiku` with the same synthesis prompt and the critiques inlined.
+
 **Critic 2: Codex CLI.** Use Bash with `codex exec --sandbox read-only --skip-git-repo-check --cd <work-folder> "<inline prompt>"`. The prompt tells Codex to follow the brief's output format. Pipe `</dev/null` to close stdin (Codex hangs on stdin otherwise). Pipe stdout through `tail -30` to keep the bash output bounded. Run in background.
 
 **Critic 3: Grok via the xAI API.** Use the helper script `grok-critic.sh <work-folder> <N> --mode <mode>` from this skill folder. It reads `XAI_API_KEY` from env (or a `.env` / shell rc fallback), loads the mode system prompt, concatenates brief + proposal + prior critiques, calls the xAI API, and writes `critique-v<N>-grok.md`. Run via Bash in background.
@@ -227,7 +229,7 @@ After acceptance:
 ## Files this skill ships (in the skill folder, do not delete)
 
 - `SKILL.md` (this file, the harness)
-- `grok-critic.sh`, `gemini-critic.sh`, `deepseek-critic.sh` (mode-agnostic critic scripts; take `--mode`)
+- `grok-critic.sh`, `gemini-critic.sh`, `deepseek-critic.sh`, `claude-critic.sh` (the unified critic-script family; all take `--mode`, `claude-critic.sh` is the no-Agent-tool Claude path)
 - `modes/architecture.system.txt` + `modes/architecture.brief-template.md`
 - `modes/science.system.txt` + `modes/science.brief-template.md`
 - `modes/editorial.system.txt` + `modes/editorial.brief-template.md`

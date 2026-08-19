@@ -1,6 +1,6 @@
 ---
 name: waterfall-lint
-version: 1.1.0
+version: 1.2.0
 description: Sequential multi-critic QA loop that scrubs a finished artifact until critics run dry. Critics run one at a time, each finding is fact-checked against ground truth before any fix, confirmed defects are fixed at class level (a validator, lint, or test, not just the instance), accepted warts go in a ledger every later critic sees, and the loop stops after two consecutive passes find nothing new. Companion to critic-gauntlet, which delivers a one-shot parallel verdict; waterfall-lint iteratively removes defects with fixes between passes. Rubrics ship for client-facing reports, working papers, and site launches.
 ---
 
@@ -24,7 +24,7 @@ Five critics, run one per pass, strongest finders first. The paid-API cost of a 
 
 1. **Codex CLI.** Specification-bug anchor. In the review runs that produced this skill, the strongest single finder.
 2. **DeepSeek** (US-hosted Fireworks by default). Distinct training lineage; in those same runs it found confirmed defects AFTER three consecutive Codex passes had gone quiet. Strong on arithmetic reconciliation and misattribution.
-3. **Claude `gauntlet-critic` subagent.** Operational-nuance anchor. Spawn least-privilege, never as `general-purpose`; see "The blast-radius rule". The agent definition ships in this repo's `agents/` folder.
+3. **Claude `gauntlet-critic` subagent.** Operational-nuance anchor. Spawn least-privilege, never as `general-purpose`; see "The blast-radius rule". The agent definition ships in this repo's `agents/` folder. On hosts without the Agent tool (Codex or any other orchestrator), run `claude-critic.sh <work-folder> <N> --mode qa` instead: `claude -p` headless on your Claude subscription, ANTHROPIC_API_KEY scrubbed in code, model gets no tools (the script pipes content in and writes the file itself).
 4. **Grok** (xAI API). Privacy / policy / jurisdictional angles. Higher noise.
 5. **Gemini** (Google AI Studio API). Distribution-blind-spot sweeper. Highest noise.
 
@@ -212,6 +212,7 @@ Codex and the Claude subagent both run INSIDE the work folder, so unlike the API
 
 ```bash
 <skill-folder>/grok-critic.sh     <work-folder> <N> --mode qa
+<skill-folder>/claude-critic.sh   <work-folder> <N> --mode qa   # no-Agent-tool hosts only
 <skill-folder>/gemini-critic.sh   <work-folder> <N> --mode qa
 <skill-folder>/deepseek-critic.sh <work-folder> <N> --mode qa
 ```
@@ -238,7 +239,7 @@ Data note: these three are third-party APIs. Text already written to be shown to
 ## Files this skill ships
 
 - `SKILL.md` (this file)
-- `grok-critic.sh`, `gemini-critic.sh`, `deepseek-critic.sh` (byte-identical to critic-gauntlet's; `--mode qa` disables prior-round context, see "API critics" above)
+- `grok-critic.sh`, `gemini-critic.sh`, `deepseek-critic.sh`, `claude-critic.sh` (byte-identical to critic-gauntlet's; `--mode qa` disables prior-round context, see "API critics" above)
 - `modes/qa.system.txt`
 - `rubrics/client-report.brief-template.md`, `rubrics/paper.brief-template.md`, `rubrics/site-launch.brief-template.md`, `rubrics/AUTHORING.md`
 - `examples/worked-example.md`

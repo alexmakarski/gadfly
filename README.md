@@ -82,9 +82,14 @@ Or copy into place:
 
 ## Requirements
 
-- Claude Code. The Claude critic and synthesizer run as subagents on your
-  existing subscription; never set `ANTHROPIC_API_KEY` to "fix" them (see the
-  billing note in the critic-gauntlet SKILL.md).
+- Claude Code, or any orchestrator that can run shell scripts: the skills are
+  universal. Inside Claude Code the Claude critic and synthesizer run as
+  least-privilege subagents; on other hosts (Codex CLI, for example) the same
+  role runs via `claude-critic.sh` (headless `claude -p` on your subscription,
+  with the model given no tools at all). Never set `ANTHROPIC_API_KEY` to "fix"
+  the Claude critic (see the billing note in the critic-gauntlet SKILL.md);
+  the script scrubs it from the subprocess for exactly that reason.
+  Codex users: copy `skills/` into `~/.agents/skills/`.
 - Optional external critics, each presence-detected and skippable: Codex CLI
   (`codex`), `XAI_API_KEY` (Grok), `GEMINI_API_KEY` (Gemini),
   `DEEPSEEK_API_KEY` (DeepSeek via a US-hosted OpenAI-compatible endpoint by
