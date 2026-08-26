@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "gadfly",
-      "source": "../",
+      "source": "./",
       "description": "Adversarial review stack: prior-art (scout), critic-gauntlet (verdict), waterfall-lint (scrub)",
       "version": "1.0.0"
     }
