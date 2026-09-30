@@ -24,11 +24,17 @@
 set -euo pipefail
 
 # --- Model pin ---------------------------------------------------------------
-# Verified current 2026-07-10. Override per-run with DEEPSEEK_MODEL=... in the env.
-# Default is Fireworks' V4-Pro id. On first-party api.deepseek.com use
-# deepseek-v4-pro (legacy deepseek-chat/deepseek-reasoner slugs retire
-# 2026-07-24). Update when DeepSeek ships a newer flagship.
-MODEL="${DEEPSEEK_MODEL:-accounts/fireworks/models/deepseek-v4-pro}"
+# Verified serving 2026-09-30 by a real chat completion. Override per-run with
+# DEEPSEEK_MODEL=... in the env.
+# Being LISTED in GET /v1/models is not proof: on 2026-09-30 that list still
+# showed deepseek-v4-pro and deepseek-v4-pro-0813, and both returned 404 "Model
+# not found, inaccessible, and/or not deployed". The serverless catalog
+# (GET /v1/accounts/fireworks/models?filter=supports_serverless=true) carried
+# one DeepSeek model: V4.1 Flash. It is DeepSeek's current flagship: the
+# 2026-09-10 announcement puts it ahead of V4-Pro and phases V4-Pro out
+# (deepseek.com/en/news/deepseek-v4-1-flash/). Re-pin when V4.1-Pro ships.
+# On first-party api.deepseek.com use deepseek-v4-pro.
+MODEL="${DEEPSEEK_MODEL:-accounts/fireworks/models/deepseek-v4p1-flash}"
 # --- Endpoint ----------------------------------------------------------------
 # OpenAI-compatible base URL, /v1 included. Default: Fireworks, US-hosted.
 BASE_URL="${DEEPSEEK_BASE_URL:-https://api.fireworks.ai/inference/v1}"
@@ -217,7 +223,7 @@ PAYLOAD=$(jq -n \
             {role: "user", content: $user}
         ],
         temperature: 0.3,
-        max_tokens: 16000
+        max_tokens: 32000
     }')
 
 RESPONSE=$(curl -sS "${BASE_URL%/}/chat/completions" \
