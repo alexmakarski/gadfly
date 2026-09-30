@@ -213,12 +213,24 @@ RESPONSE=$(curl -sS "https://generativelanguage.googleapis.com/v1beta/models/${M
     -H "Content-Type: application/json" \
     -d "$PAYLOAD")
 
-CONTENT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // .error.message // "ERROR: no content"')
+# Model text only. Never fall back to the error body: on 2026-09-30 that fallback
+# wrote API error text into critique files and exited 0, and the liveness gate
+# trusts this exit code. Under 500 chars (the liveness gate's size floor) is an
+# error or a stub, so nothing is written.
+CONTENT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null || true)
 
-if [ -z "$CONTENT" ] || [ "$CONTENT" = "null" ] || [ "$CONTENT" = "ERROR: no content" ]; then
-    echo "ERROR: empty or failed response from Google AI Studio API" >&2
+if [ "${#CONTENT}" -lt 500 ]; then
+    echo "ERROR: empty or short response from Google AI Studio API (${#CONTENT} chars); no critique written" >&2
     echo "Full response:" >&2
     echo "$RESPONSE" >&2
+    exit 1
+fi
+
+# A reply cut off at the token limit is a partial critique that passes every
+# size check (2026-09-30: DeepSeek V4.1 Flash at 16k stopped mid-section 3,
+# no recommendation). Fail it the same way.
+if [ "$(echo "$RESPONSE" | jq -r '.candidates[0].finishReason // empty' 2>/dev/null || true)" = "MAX_TOKENS" ]; then
+    echo "ERROR: reply from Google AI Studio API cut off at the token limit (${#CONTENT} chars); no critique written" >&2
     exit 1
 fi
 

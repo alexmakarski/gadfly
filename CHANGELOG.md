@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.3 (2026-09-30)
+
+- The Grok, Gemini and DeepSeek scripts now fail loudly (critic-gauntlet 2.9.3,
+  waterfall-lint 1.3.3). Before, an API error body was saved as the critique and
+  the script exited 0. Now any error body, any reply under 500 characters, and
+  any reply cut off at the token limit exits 1 and writes no critique file.
+  Seen live: an out-of-credits message and a model-not-found message were
+  saved as critiques, and a DeepSeek reply cut off mid-critique would have
+  passed the liveness gate.
+- Codex critic pinned to `-m gpt-6-astra -c model_reasoning_effort=high` in
+  both skills, instead of inheriting the operator's Codex config.
+
 ## 1.2.2 (2026-09-30)
 
 - DeepSeek critic default re-pinned to `accounts/fireworks/models/deepseek-v4p1-flash`

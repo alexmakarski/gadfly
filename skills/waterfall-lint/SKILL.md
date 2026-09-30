@@ -1,6 +1,6 @@
 ---
 name: waterfall-lint
-version: 1.3.2
+version: 1.3.3
 description: Sequential multi-critic QA loop that scrubs a finished artifact until critics run dry. Critics run one at a time, each finding is fact-checked against ground truth before any fix, confirmed defects are fixed at class level (a validator, lint, or test, not just the instance), accepted warts go in a ledger every later critic sees, and the loop stops after two consecutive passes find nothing new. Companion to critic-gauntlet, which delivers a one-shot parallel verdict; waterfall-lint iteratively removes defects with fixes between passes. Rubrics ship for client-facing reports, working papers, and site launches.
 ---
 
@@ -259,10 +259,10 @@ SCOPE (hard):
 ### Codex CLI invocation
 
 ```bash
-codex exec --sandbox read-only --skip-git-repo-check --cd <work-folder> "<same prompt template, but: print the critique to STDOUT, write no files>" </dev/null > <work-folder>/critique-v<N>-codex.raw 2>&1
+codex exec -m gpt-6-astra -c model_reasoning_effort=high --sandbox read-only --skip-git-repo-check --cd <work-folder> "<same prompt template, but: print the critique to STDOUT, write no files>" </dev/null > <work-folder>/critique-v<N>-codex.raw 2>&1
 ```
 
-`</dev/null` is required; codex exec hangs on stdin without it.
+`</dev/null` is required; codex exec hangs on stdin without it. `-m` and `-c` pin the model and thinking level; critic-gauntlet's "Codex CLI invocation" section says why.
 
 Codex and the Claude subagent both run INSIDE the work folder, so unlike the API critics they can read every earlier critique, fact-check log, and artifact snapshot in it. The read-exactly-two-files instruction at the top of the prompt template is the only thing stopping them from READING those, so do not trim it when you paste the template. Note what that instruction is and is not: it is a prompt, so it constrains attention, not capability. Contamination control is a prompt; blast-radius control is the sandbox. Do not confuse the two, and never rely on wording to stop a WRITE. If a filesystem critic returns a finding whose quote is not in `proposal-v<N>.md`, treat it as contaminated and discard it at the fact-check gate rather than chasing the receipt.
 

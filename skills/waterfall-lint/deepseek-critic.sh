@@ -231,12 +231,24 @@ RESPONSE=$(curl -sS "${BASE_URL%/}/chat/completions" \
     -H "Content-Type: application/json" \
     -d "$PAYLOAD")
 
-CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // .error // "ERROR: no content"')
+# Model text only. Never fall back to the error body: on 2026-09-30 that fallback
+# wrote API error text into the critique file and exited 0, and the liveness
+# gate trusts this exit code. Under 500 chars (the liveness gate's size floor)
+# is an error or a stub, so nothing is written.
+CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null || true)
 
-if [ -z "$CONTENT" ] || [ "$CONTENT" = "null" ] || [ "$CONTENT" = "ERROR: no content" ]; then
-    echo "ERROR: empty response from $ENDPOINT_HOST" >&2
+if [ "${#CONTENT}" -lt 500 ]; then
+    echo "ERROR: empty or short response from $ENDPOINT_HOST (${#CONTENT} chars); no critique written" >&2
     echo "Full response:" >&2
     echo "$RESPONSE" >&2
+    exit 1
+fi
+
+# A reply cut off at the token limit is a partial critique that passes every
+# size check (2026-09-30: DeepSeek V4.1 Flash at 16k stopped mid-section 3,
+# no recommendation). Fail it the same way.
+if [ "$(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty' 2>/dev/null || true)" = "length" ]; then
+    echo "ERROR: reply from $ENDPOINT_HOST cut off at the token limit (${#CONTENT} chars); no critique written" >&2
     exit 1
 fi
 
