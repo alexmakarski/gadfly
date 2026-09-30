@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.9.1
+version: 2.9.2
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -126,7 +126,7 @@ All critics answer the same brief and follow ITS output format (which differs by
 
 **Critic 4: Gemini via the Google AI Studio API.** Use the helper script `gemini-critic.sh <work-folder> <N> --mode <mode>` from this skill folder. Same shape as Grok. Reads `GEMINI_API_KEY`, loads the mode system prompt, calls the Google AI Studio API, writes `critique-v<N>-gemini.md`. Run via Bash in background. In science mode, confirm the proposal file handed to the external critics is the anonymized artifact only.
 
-**Critic 5: DeepSeek via an OpenAI-compatible endpoint.** Use the helper script `deepseek-critic.sh <work-folder> <N> --mode <mode>` from this skill folder. Same shape as Grok; reads `DEEPSEEK_API_KEY`. The endpoint defaults to Fireworks (US-hosted, serving the MIT open weights; model id `accounts/fireworks/models/deepseek-v4-pro`). DeepSeek's first-party API is PRC-hosted; opt into it deliberately via `DEEPSEEK_BASE_URL=https://api.deepseek.com/v1` + `DEEPSEEK_MODEL=deepseek-v4-pro`, and never for material that must not egress to a PRC vendor. Self-hosted vLLM works the same way. The critique header records the serving endpoint. Writes `critique-v<N>-deepseek.md`. Run via Bash in background.
+**Critic 5: DeepSeek via an OpenAI-compatible endpoint.** Use the helper script `deepseek-critic.sh <work-folder> <N> --mode <mode>` from this skill folder. Same shape as Grok; reads `DEEPSEEK_API_KEY`. The endpoint defaults to Fireworks (US-hosted, serving the MIT open weights; model id `accounts/fireworks/models/deepseek-v4p1-flash` since 2026-09-30: DeepSeek's current flagship, ahead of the phased-out V4-Pro per DeepSeek's 2026-09-10 announcement, and the only DeepSeek model Fireworks serverless serves). DeepSeek's first-party API is PRC-hosted; opt into it deliberately via `DEEPSEEK_BASE_URL=https://api.deepseek.com/v1` + `DEEPSEEK_MODEL=deepseek-v4-pro`, and never for material that must not egress to a PRC vendor. Self-hosted vLLM works the same way. The critique header records the serving endpoint. Writes `critique-v<N>-deepseek.md`. Run via Bash in background.
 
 The helper scripts take the work folder path and the round number, plus an optional `--mode` (default architecture). Both auto-pick up prior-round critiques when N > 1.
 
@@ -323,7 +323,7 @@ Same shape as Grok. Requires `GEMINI_API_KEY`. The model is pinned at the top of
 ./deepseek-critic.sh <work-folder> <round-number> [--mode architecture|science|editorial]
 ```
 
-Same shape as Grok. Requires `DEEPSEEK_API_KEY`. The model is pinned at the top of the script (override with `DEEPSEEK_MODEL=...`); the endpoint is `DEEPSEEK_BASE_URL` (default: Fireworks, US-hosted; any OpenAI-compatible host works, including the PRC-hosted first-party API and a self-hosted vLLM). The critique header records the serving endpoint.
+Same shape as Grok. Requires `DEEPSEEK_API_KEY`. The model is pinned at the top of the script (override with `DEEPSEEK_MODEL=...`). Before re-pinning, prove the id serves with a real chat completion: on 2026-09-30 `GET /v1/models` still listed two V4-Pro ids that both returned 404; the endpoint is `DEEPSEEK_BASE_URL` (default: Fireworks, US-hosted; any OpenAI-compatible host works, including the PRC-hosted first-party API and a self-hosted vLLM). The critique header records the serving endpoint.
 
 ## Models to skip
 

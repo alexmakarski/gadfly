@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.2 (2026-09-30)
+
+- DeepSeek critic default re-pinned to `accounts/fireworks/models/deepseek-v4p1-flash`
+  (critic-gauntlet 2.9.2, waterfall-lint 1.3.2). Both V4-Pro ids now return 404
+  on Fireworks serverless, even though `GET /v1/models` still lists them.
+  V4.1 Flash is DeepSeek's current flagship: DeepSeek's 2026-09-10 announcement
+  puts it ahead of V4-Pro and phases V4-Pro out. Still US-hosted Fireworks.
+- DeepSeek reply budget raised from 16,000 to 32,000 tokens. V4.1 Flash thinks
+  before it answers; at 16,000 one run returned no text and the next stopped
+  mid-critique before the recommendation.
+
 ## 1.2.0 (2026-08-19)
 
 The exemplar-bar release, adapted from Matt Shumer's Claude of Duty via
