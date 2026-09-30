@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.9.2
+version: 2.9.3
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -120,7 +120,7 @@ All critics answer the same brief and follow ITS output format (which differs by
 
 **No Agent tool? This SKILL.md is universal (added 2.8.0).** When the orchestrator is NOT Claude Code (Codex, or any host without the Agent tool), run the Claude critic as a script instead: `claude-critic.sh <work-folder> <N> --mode <mode>` (ships next to the other critic scripts). It runs `claude -p` headless on your Claude subscription, scrubs `ANTHROPIC_API_KEY` from the subprocess so the billing guardrail is enforced in code, and gives the model NO tools at all: brief and proposal are piped in, and the script itself writes the single output file, so its blast radius is smaller than the subagent's. Liveness-gate it as a Bash critic (exit 0 + file check). The Codex critic invocation is unchanged from any host: a fresh `codex exec --sandbox read-only` subprocess is an independent context even when Codex is the orchestrator (do not double-count the orchestrator as a critic). The synthesizer on a no-Agent-tool host: `claude -p --model haiku` with the same synthesis prompt and the critiques inlined.
 
-**Critic 2: Codex CLI.** Use Bash with `codex exec --sandbox read-only --skip-git-repo-check --cd <work-folder> "<inline prompt>"`. The prompt tells Codex to follow the brief's output format. Pipe `</dev/null` to close stdin (Codex hangs on stdin otherwise). Pipe stdout through `tail -30` to keep the bash output bounded. Run in background.
+**Critic 2: Codex CLI.** Use Bash with `codex exec -m gpt-6-astra -c model_reasoning_effort=high --sandbox read-only --skip-git-repo-check --cd <work-folder> "<inline prompt>"`. The prompt tells Codex to follow the brief's output format. Pipe `</dev/null` to close stdin (Codex hangs on stdin otherwise). Pipe stdout through `tail -30` to keep the bash output bounded. Keep `-m` and `-c`: they pin the model and thinking level instead of inheriting personal config (see "Codex CLI invocation" below). Run in background.
 
 **Critic 3: Grok via the xAI API.** Use the helper script `grok-critic.sh <work-folder> <N> --mode <mode>` from this skill folder. It reads `XAI_API_KEY` from env (or a `.env` / shell rc fallback), loads the mode system prompt, concatenates brief + proposal + prior critiques, calls the xAI API, and writes `critique-v<N>-grok.md`. Run via Bash in background.
 
@@ -150,12 +150,12 @@ Residual hole, stated so nobody assumes it is closed: a critic still holds `Writ
 
 Do not synthesize until every enabled critic has either produced a valid critique or been explicitly dropped by the user. A missing critic must never be silently absorbed: a degraded roster is a decision, not a default. The most common way a gauntlet quietly loses signal is a critic that erred without anyone noticing, and the synthesis treating three-of-an-intended-four as if four had agreed.
 
-Typical timing: Claude subagent 2-3 min, Codex CLI 5-10 min, Grok and Gemini under a minute. DeepSeek is not yet timed; expect thinking-mode latency in minutes, not seconds.
+Typical timing: Claude subagent 2-3 min, Codex CLI about 2 min at the pinned high thinking level (measured 2026-09-30; older unpinned runs took 5-10 min), Grok and Gemini under a minute. DeepSeek is not yet timed; expect thinking-mode latency in minutes, not seconds.
 
 **Success condition (same gate for all critics).** A critic passed only if ALL hold:
 1. Its `critique-v<N>-<critic>.md` file exists and is at least ~500 bytes. Real critiques run 3 KB and up; anything smaller is a stub or error.
 2. The file is the actual multi-section critique in the brief's format, not an error payload. Reject if it leads with `ERROR:` or contains raw API error JSON.
-3. For the Bash critics (Codex, Grok, Gemini): the process exit code was 0. The helper scripts `set -euo pipefail` and exit non-zero on any missing-key / API / empty-response failure. Capture the last stderr line as the failure reason.
+3. For the Bash critics (Codex, Grok, Gemini, DeepSeek): the process exit code was 0. The helper scripts `set -euo pipefail` and exit non-zero on any missing-key / API / empty-response failure, on any response under 500 characters, and on a reply cut off at the token limit, without writing the critique file. Capture the last stderr line as the failure reason.
 4. For the Claude subagent: the Agent tool returned success and the file was written. A subagent that erred without writing the file is a fail even if it returned some text.
 
 **On any critic failing: retry once, then halt.**
@@ -296,10 +296,12 @@ POSTURE: neutral judge, not advocate. No sympathetic opener. Lead with what the 
 ### Codex CLI invocation
 
 ```bash
-codex exec --sandbox read-only --skip-git-repo-check --cd <work-folder> "<same prompt template, but: print the critique to STDOUT, write no files>" </dev/null > <work-folder>/critique-v<N>-codex.raw 2>&1
+codex exec -m gpt-6-astra -c model_reasoning_effort=high --sandbox read-only --skip-git-repo-check --cd <work-folder> "<same prompt template, but: print the critique to STDOUT, write no files>" </dev/null > <work-folder>/critique-v<N>-codex.raw 2>&1
 ```
 
 Important: `</dev/null` is required. Without it, `codex exec` waits on stdin and hangs indefinitely.
+
+Important: `-m gpt-6-astra -c model_reasoning_effort=high` pin the model and thinking level (verified 2026-09-30). Without them Codex uses whatever the operator's `~/.codex/config.toml` says. In one real case that was `gpt-6.1-sol`, which a ChatGPT-account login rejects (`400 The 'gpt-6.1-sol' model is not supported when using Codex with a ChatGPT account`), at thinking level `low`. Pinned, not detected: Codex already exits non-zero on that error and the liveness gate catches it. What was missing is a model that works whatever the personal config says, and a critic that does not change when someone edits theirs. Thinking level, one run each on the same architecture round: medium 105 s, high 120 s, xhigh 217 s. All three found the same top holes; only high rated one weak test a blocker. High costs about 15 seconds and still finishes before the Claude critic. Do not use `ultra` (it delegates to sub-agents). If the pin stops serving, swap in a model that does. Never edit the operator's config to fix a critic run.
 
 ### Grok invocation
 
