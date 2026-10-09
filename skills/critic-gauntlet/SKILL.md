@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.9.3
+version: 2.9.4
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -150,7 +150,7 @@ Residual hole, stated so nobody assumes it is closed: a critic still holds `Writ
 
 Do not synthesize until every enabled critic has either produced a valid critique or been explicitly dropped by the user. A missing critic must never be silently absorbed: a degraded roster is a decision, not a default. The most common way a gauntlet quietly loses signal is a critic that erred without anyone noticing, and the synthesis treating three-of-an-intended-four as if four had agreed.
 
-Typical timing: Claude subagent 2-3 min, Codex CLI about 2 min at the pinned high thinking level (measured 2026-09-30; older unpinned runs took 5-10 min), Grok and Gemini under a minute. DeepSeek is not yet timed; expect thinking-mode latency in minutes, not seconds.
+Typical timing: Claude subagent 2-3 min, Codex CLI about 2 min at the pinned high thinking level (measured 2026-09-30; older unpinned runs took 5-10 min), Grok and Gemini under a minute. DeepSeek about 2 min with its reasoning cap (measured 2026-10-08).
 
 **Success condition (same gate for all critics).** A critic passed only if ALL hold:
 1. Its `critique-v<N>-<critic>.md` file exists and is at least ~500 bytes. Real critiques run 3 KB and up; anything smaller is a stub or error.
@@ -325,7 +325,7 @@ Same shape as Grok. Requires `GEMINI_API_KEY`. The model is pinned at the top of
 ./deepseek-critic.sh <work-folder> <round-number> [--mode architecture|science|editorial]
 ```
 
-Same shape as Grok. Requires `DEEPSEEK_API_KEY`. The model is pinned at the top of the script (override with `DEEPSEEK_MODEL=...`). Before re-pinning, prove the id serves with a real chat completion: on 2026-09-30 `GET /v1/models` still listed two V4-Pro ids that both returned 404; the endpoint is `DEEPSEEK_BASE_URL` (default: Fireworks, US-hosted; any OpenAI-compatible host works, including the PRC-hosted first-party API and a self-hosted vLLM). The critique header records the serving endpoint.
+Same shape as Grok. Requires `DEEPSEEK_API_KEY`. The model is pinned at the top of the script (override with `DEEPSEEK_MODEL=...`). Before re-pinning, prove the id serves with a real chat completion: on 2026-09-30 `GET /v1/models` still listed two V4-Pro ids that both returned 404; the endpoint is `DEEPSEEK_BASE_URL` (default: Fireworks, US-hosted; any OpenAI-compatible host works, including the PRC-hosted first-party API and a self-hosted vLLM). The critique header records the serving endpoint. The main call caps reasoning at 16000 tokens (`thinking.budget_tokens`, override with `DEEPSEEK_THINKING_BUDGET=...`): uncapped, V4.1 Flash spent the whole 32000-token limit on reasoning and returned no critique on 5 of 5 waterfall qa passes (2026-10-07/08). Raising `max_tokens` does not fix that; at 64000 the reasoning looped to the limit. The editorial cold-read call has the same fault (0 of 3 passed uncapped) and is capped at 4000.
 
 ## Models to skip
 

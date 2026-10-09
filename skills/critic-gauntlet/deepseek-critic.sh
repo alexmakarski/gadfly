@@ -38,6 +38,20 @@ MODEL="${DEEPSEEK_MODEL:-accounts/fireworks/models/deepseek-v4p1-flash}"
 # --- Endpoint ----------------------------------------------------------------
 # OpenAI-compatible base URL, /v1 included. Default: Fireworks, US-hosted.
 BASE_URL="${DEEPSEEK_BASE_URL:-https://api.fireworks.ai/inference/v1}"
+# --- Reasoning cap -----------------------------------------------------------
+# Hard limit on reasoning tokens for the main call (thinking.budget_tokens).
+# Without it V4.1 Flash can spend the whole max_tokens on reasoning and return
+# zero characters of critique: 5 of 5 waterfall qa passes on 2026-10-07/08.
+# Measured 2026-10-08 on one of those inputs: uncapped 2 of 9 passed, across
+# temperature 0.3 / 0.6 / default and reasoning_effort low / medium; at
+# max_tokens 64000 it wrote "Hmm." 15,613 times. Capped at 16000: 2 of 2
+# passed (at 8000: 1 of 1), reasoning stopped at the cap. Override per-run with
+# DEEPSEEK_THINKING_BUDGET=... (must stay under the main call's max_tokens).
+THINKING_BUDGET="${DEEPSEEK_THINKING_BUDGET:-16000}"
+# The editorial cold-read call has max_tokens 8000, so it gets its own cap.
+# Measured 2026-10-08 on one article: uncapped 0 of 3 passed (all 8000 tokens
+# went to reasoning); capped at 4000: 3 of 3 passed.
+COLD_THINKING_BUDGET=4000
 # -----------------------------------------------------------------------------
 
 ENDPOINT_HOST="${BASE_URL#*://}"; ENDPOINT_HOST="${ENDPOINT_HOST%%/*}"
@@ -167,6 +181,7 @@ if [ "$MODE" = "editorial" ]; then
         --arg model "$MODEL" \
         --arg system "$COLD_SYSTEM" \
         --arg user "$(cat "$PROPOSAL")" \
+        --argjson budget "$COLD_THINKING_BUDGET" \
         '{
             model: $model,
             messages: [
@@ -174,7 +189,8 @@ if [ "$MODE" = "editorial" ]; then
                 {role: "user", content: $user}
             ],
             temperature: 0.3,
-            max_tokens: 8000
+            max_tokens: 8000,
+            thinking: {type: "enabled", budget_tokens: $budget}
         }')
     COLD_RESPONSE=$(curl -sS "${BASE_URL%/}/chat/completions" \
         -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
@@ -216,6 +232,7 @@ PAYLOAD=$(jq -n \
     --arg model "$MODEL" \
     --arg system "$SYSTEM_PROMPT" \
     --arg user "$USER_PROMPT" \
+    --argjson budget "$THINKING_BUDGET" \
     '{
         model: $model,
         messages: [
@@ -223,7 +240,8 @@ PAYLOAD=$(jq -n \
             {role: "user", content: $user}
         ],
         temperature: 0.3,
-        max_tokens: 32000
+        max_tokens: 32000,
+        thinking: {type: "enabled", budget_tokens: $budget}
     }')
 
 RESPONSE=$(curl -sS "${BASE_URL%/}/chat/completions" \
@@ -237,18 +255,20 @@ RESPONSE=$(curl -sS "${BASE_URL%/}/chat/completions" \
 # is an error or a stub, so nothing is written.
 CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null || true)
 
+# A reply cut off at the token limit is a partial critique that passes every
+# size check (2026-09-30: DeepSeek V4.1 Flash at 16k stopped mid-section 3,
+# no recommendation). Fail it. Checked before the size check: when reasoning
+# takes the whole limit the content is empty, and the size check reported that
+# as an "empty response" with no cause (2026-10-07/08).
+if [ "$(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty' 2>/dev/null || true)" = "length" ]; then
+    echo "ERROR: reply from $ENDPOINT_HOST cut off at the token limit (${#CONTENT} chars of critique, $(echo "$RESPONSE" | jq -r '.usage.completion_tokens_details.reasoning_tokens // "unknown"' 2>/dev/null || echo unknown) reasoning tokens); no critique written" >&2
+    exit 1
+fi
+
 if [ "${#CONTENT}" -lt 500 ]; then
     echo "ERROR: empty or short response from $ENDPOINT_HOST (${#CONTENT} chars); no critique written" >&2
     echo "Full response:" >&2
     echo "$RESPONSE" >&2
-    exit 1
-fi
-
-# A reply cut off at the token limit is a partial critique that passes every
-# size check (2026-09-30: DeepSeek V4.1 Flash at 16k stopped mid-section 3,
-# no recommendation). Fail it the same way.
-if [ "$(echo "$RESPONSE" | jq -r '.choices[0].finish_reason // empty' 2>/dev/null || true)" = "length" ]; then
-    echo "ERROR: reply from $ENDPOINT_HOST cut off at the token limit (${#CONTENT} chars); no critique written" >&2
     exit 1
 fi
 
