@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.4 (2026-10-08)
+
+- The DeepSeek critic now caps its reasoning (critic-gauntlet 2.9.4,
+  waterfall-lint 1.3.4). Before, V4.1 Flash could spend the whole 32,000-token
+  reply limit on reasoning and return no critique at all. The main call now
+  sends `thinking.budget_tokens: 16000` (override with
+  `DEEPSEEK_THINKING_BUDGET`); the editorial cold-read call sends 4000.
+  Measured on one input: 2 of 9 uncapped requests returned a critique, 3 of 3
+  capped ones did. A larger `max_tokens`, a different temperature and
+  `reasoning_effort` did not help.
+- A reply that ends at the token limit is now reported as that, with the
+  reasoning token count. Before, an all-reasoning reply was reported as an
+  "empty response" and the cause stayed hidden.
+
 ## 1.2.3 (2026-09-30)
 
 - The Grok, Gemini and DeepSeek scripts now fail loudly (critic-gauntlet 2.9.3,
