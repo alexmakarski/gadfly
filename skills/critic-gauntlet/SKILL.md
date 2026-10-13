@@ -1,6 +1,6 @@
 ---
 name: critic-gauntlet
-version: 2.9.4
+version: 2.9.5
 description: Run an adversarial critic gauntlet on a proposal. Spawns a sandboxed Claude critic subagent plus optional Codex CLI, Grok (xAI API), Gemini (Google AI Studio API), and DeepSeek (any OpenAI-compatible endpoint) critics in parallel, surfaces raw critic outputs verbatim, then synthesizes. One harness, three rubric modes selected by a flag: architecture (ADR decisions), science (working-paper peer-review desk-screen), editorial (five-lens article review). On ARCHITECTURE decisions, run the `prior-art` skill FIRST and write the proposal against what it finds: the gauntlet judges whether a proposal is wrong, it has no way to tell you the field already solved this differently.
 ---
 
@@ -150,7 +150,7 @@ Residual hole, stated so nobody assumes it is closed: a critic still holds `Writ
 
 Do not synthesize until every enabled critic has either produced a valid critique or been explicitly dropped by the user. A missing critic must never be silently absorbed: a degraded roster is a decision, not a default. The most common way a gauntlet quietly loses signal is a critic that erred without anyone noticing, and the synthesis treating three-of-an-intended-four as if four had agreed.
 
-Typical timing: Claude subagent 2-3 min, Codex CLI about 2 min at the pinned high thinking level (measured 2026-09-30; older unpinned runs took 5-10 min), Grok and Gemini under a minute. DeepSeek about 2 min with its reasoning cap (measured 2026-10-08).
+Typical timing: Claude subagent 2-3 min, Codex CLI about 2 min at the pinned high thinking level (measured 2026-09-30; older unpinned runs took 5-10 min), Grok under a minute, Gemini 2-4.5 min at the pinned HIGH thinking level (measured 2026-10-13 on Gemini 4 Argon). DeepSeek about 2 min with its reasoning cap (measured 2026-10-08).
 
 **Success condition (same gate for all critics).** A critic passed only if ALL hold:
 1. Its `critique-v<N>-<critic>.md` file exists and is at least ~500 bytes. Real critiques run 3 KB and up; anything smaller is a stub or error.
@@ -317,7 +317,7 @@ Reads `brief-v<N>.md` and `proposal-v<N>.md`, loads the mode system prompt from 
 ./gemini-critic.sh <work-folder> <round-number> [--mode architecture|science|editorial]
 ```
 
-Same shape as Grok. Requires `GEMINI_API_KEY`. The model is pinned at the top of the script (override per run with `GEMINI_MODEL=...`). Free tier covers normal usage; paid tier is sub-penny per critique.
+Same shape as Grok. Requires `GEMINI_API_KEY`. The model and its thinking level are pinned at the top of the script (override per run with `GEMINI_MODEL=...` and `GEMINI_THINKING_LEVEL=...`).
 
 ### DeepSeek invocation
 
@@ -337,9 +337,9 @@ Per round with the full five-critic roster:
 - Claude gauntlet-critic subagent: included in subscription
 - Codex CLI: included in subscription
 - Grok via xAI API: roughly $0.05
-- Gemini via Google AI Studio API: roughly $0.05 (free tier often covers it)
+- Gemini via Google AI Studio API: roughly $0.15-$0.25 in architecture mode at the pinned HIGH thinking level (measured 2026-10-13 on Gemini 4 Argon; thinking tokens bill as output; Google's list price doubles on 2026-12-01)
 - DeepSeek via Fireworks (US-hosted): a few cents (the PRC-hosted first-party API is ~$0.01 if deliberately opted into)
 
-Wall-clock: about 10 minutes if all four run cleanly. Allow up to 30 minutes for slow Codex runs. Grok and Gemini both return in under a minute and never gate completion.
+Wall-clock: about 10 minutes if all four run cleanly. Allow up to 30 minutes for slow Codex runs. Grok returns in under a minute and never gates completion. Gemini takes 2-4.5 min.
 
-Across a typical 3-4 round decision: roughly $0.20-$0.30 of paid-API cost, 30-60 minutes of total elapsed time spread across the session.
+Across a typical 3-4 round decision: roughly $0.60-$1.30 of paid-API cost (most of it the Gemini critic), 30-60 minutes of total elapsed time spread across the session.

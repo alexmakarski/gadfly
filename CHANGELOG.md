@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.5 (2026-10-13)
+
+- The Gemini critic is re-pinned from `gemini-3.1-pro-preview` to
+  `gemini-4-argon` (critic-gauntlet 2.9.5, waterfall-lint 1.3.5). Override with
+  `GEMINI_MODEL`, as before.
+- Every Gemini call now sends `thinkingLevel: HIGH` (override with
+  `GEMINI_THINKING_LEVEL`). 3.1 Pro thought on every call by default. Argon at
+  its default spent zero thinking tokens on four of four real critic calls, so
+  a pin change alone would have turned the critic's reasoning off.
+- The editorial cold-read call's `maxOutputTokens` goes from 8000 to 16000. At
+  HIGH, one cold read used 7,405 tokens of thinking plus notes.
+- Measured on six real inputs across architecture, qa and editorial modes: six
+  of six returned a full critique, in 85 to 261 seconds each. 3.1 Pro took 20
+  to 60 seconds. The highest use of the 32,000-token main-call limit was 90
+  percent; a reply that hits the limit still fails loudly.
+- Known difference: Argon used an em-dash as a separator in two of three qa
+  critiques, against the mode prompt. Not fixed in this release.
+- Cost: about $0.13 to $0.55 per Gemini call at Google's list price on
+  2026-10-13. That price doubles on 2026-12-01.
+
 ## 1.2.4 (2026-10-08)
 
 - The DeepSeek critic now caps its reasoning (critic-gauntlet 2.9.4,
