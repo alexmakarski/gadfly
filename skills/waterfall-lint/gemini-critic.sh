@@ -15,11 +15,15 @@
 set -euo pipefail
 
 # --- Model pin ---------------------------------------------------------------
-# Verified current 2026-07-10. Override per-run with GEMINI_MODEL=... in the env.
-# Pro tier is preferred over Flash for adversarial reasoning (Gemini 3.5 shipped
-# as Flash only; 3.1 Pro remains the reasoning tier). Re-pin when a newer Pro
-# replaces it.
-MODEL="${GEMINI_MODEL:-gemini-3.1-pro-preview}"
+# Verified current 2026-10-13. Override per-run with GEMINI_MODEL=... in the env.
+# Gemini 4 Argon is Google's flagship reasoning model (stable); it replaces
+# 3.1 Pro here. Re-pin when a newer flagship replaces it.
+MODEL="${GEMINI_MODEL:-gemini-4-argon}"
+# Thinking level, sent on every call. 3.1 Pro thought by default; Argon at its
+# default spent zero thinking tokens on real critic inputs (measured
+# 2026-10-13). Override per-run with GEMINI_THINKING_LEVEL=LOW|MEDIUM|HIGH.
+# Argon ignores temperature; the field stays for GEMINI_MODEL overrides.
+THINKING_LEVEL="${GEMINI_THINKING_LEVEL:-HIGH}"
 # -----------------------------------------------------------------------------
 
 if [ "$#" -lt 2 ]; then
@@ -146,6 +150,7 @@ if [ "$MODE" = "editorial" ]; then
     COLD_PAYLOAD=$(jq -n \
         --arg system "$COLD_SYSTEM" \
         --arg user "$(cat "$PROPOSAL")" \
+        --arg level "$THINKING_LEVEL" \
         '{
             systemInstruction: {
                 parts: [{text: $system}]
@@ -155,7 +160,8 @@ if [ "$MODE" = "editorial" ]; then
             ],
             generationConfig: {
                 temperature: 0.3,
-                maxOutputTokens: 8000
+                maxOutputTokens: 16000,
+                thinkingConfig: {thinkingLevel: $level}
             }
         }')
     COLD_RESPONSE=$(curl -sS "https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}" \
@@ -196,6 +202,7 @@ Produce the adversarial critique now. Markdown format. No preamble. Start with t
 PAYLOAD=$(jq -n \
     --arg system "$SYSTEM_PROMPT" \
     --arg user "$USER_PROMPT" \
+    --arg level "$THINKING_LEVEL" \
     '{
         systemInstruction: {
             parts: [{text: $system}]
@@ -205,7 +212,8 @@ PAYLOAD=$(jq -n \
         ],
         generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 32000
+            maxOutputTokens: 32000,
+            thinkingConfig: {thinkingLevel: $level}
         }
     }')
 
