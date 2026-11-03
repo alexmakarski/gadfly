@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.6 (2026-11-03)
+
+- The DeepSeek critic is re-pinned from `deepseek-v4p1-flash` to
+  `deepseek-v4p1-flash-1017` on Fireworks (critic-gauntlet 2.9.6,
+  waterfall-lint 1.3.6). Override with `DEEPSEEK_MODEL`, as before.
+- Why: DeepSeek updated V4.1 Flash on 2026-10-17. Fireworks serves the update
+  under its own dated id. The plain id stayed on the 2026-09-10 weights, so
+  the critic did not get the update by itself.
+- Measured on four real inputs across architecture, qa and editorial modes:
+  four of four returned a full critique, in 78 to 135 seconds each. On the
+  two qa inputs the old weights took 116 and 128 seconds; the update took 78
+  and 82.
+- The reasoning cap and token limits are unchanged.
+
 ## 1.2.5 (2026-10-13)
 
 - The Gemini critic is re-pinned from `gemini-3.1-pro-preview` to

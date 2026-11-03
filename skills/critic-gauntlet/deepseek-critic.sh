@@ -24,7 +24,7 @@
 set -euo pipefail
 
 # --- Model pin ---------------------------------------------------------------
-# Verified serving 2026-09-30 by a real chat completion. Override per-run with
+# Verified serving 2026-11-03 by a real chat completion. Override per-run with
 # DEEPSEEK_MODEL=... in the env.
 # Being LISTED in GET /v1/models is not proof: on 2026-09-30 that list still
 # showed deepseek-v4-pro and deepseek-v4-pro-0813, and both returned 404 "Model
@@ -32,9 +32,13 @@ set -euo pipefail
 # (GET /v1/accounts/fireworks/models?filter=supports_serverless=true) carried
 # one DeepSeek model: V4.1 Flash. It is DeepSeek's current flagship: the
 # 2026-09-10 announcement puts it ahead of V4-Pro and phases V4-Pro out
-# (deepseek.com/en/news/deepseek-v4-1-flash/). Re-pin when V4.1-Pro ships.
+# (deepseek.com/en/news/deepseek-v4-1-flash/). On 2026-11-03 the catalog also
+# carried deepseek-v4p1-flash-1017, DeepSeek's 2026-10-17 update
+# (api-docs.deepseek.com/updates/). Fireworks gave the update its own id; the
+# plain id did not move to it. So when re-pinning, look for a dated id.
+# Re-pin when V4.1-Pro ships.
 # On first-party api.deepseek.com use deepseek-v4-pro.
-MODEL="${DEEPSEEK_MODEL:-accounts/fireworks/models/deepseek-v4p1-flash}"
+MODEL="${DEEPSEEK_MODEL:-accounts/fireworks/models/deepseek-v4p1-flash-1017}"
 # --- Endpoint ----------------------------------------------------------------
 # OpenAI-compatible base URL, /v1 included. Default: Fireworks, US-hosted.
 BASE_URL="${DEEPSEEK_BASE_URL:-https://api.fireworks.ai/inference/v1}"
